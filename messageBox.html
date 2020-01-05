@@ -5,44 +5,79 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Document</title>
-    <script src="node_modules/vue/dist/vue.js"></script>
+    <title>06-4插槽</title>
     <style>
         .active {
             background-color: #ddd;
             cursor: pointer;
         }
+
+        .message-box {
+            padding: 10px 20px;
+            background: #4fc08d;
+            border: 1px solid #42b983;
+        }
+
+        .message-box-close {
+            float: right;
+            cursor: pointer;
+        }
     </style>
+
 </head>
 
 <body>
     <div id="app">
+        <!-- 插槽实现内容分发 -->
+        <message-box :show.sync="show">
+            <template v-solt:title>恭喜</template>
+            <template >新增课程成功</template>
+        </message-box>
         <h3 :title="title">{{title}}</h3>
 
-        <course-add @add-course="addCourse"></course-add>
-        
+        <course-add v-model="course" @add-course="addCourse"></course-add>
+        <!-- <course-add :value="course" @input="course=$event" @add-course="addCourse"></course-add> -->
+
         <p>课程总数：{{total}}门</p>
         <course-list :courses="courses"></course-list>
+
     </div>
 
-
+    <script src="node_modules/vue/dist/vue.js"></script>
     <script>
-        Vue.component('course-add',{
-            data(){
-                return{
-                    course: ''
-                }
-            },
-            template:`
-            <div>
-                <input type="text" v-model="course" v-on:keydown.enter="addCourse" />
-                <button v-on:click="addCourse">新增课程</button>
+        //弹窗组件
+        Vue.component('message-box', {
+            props: ['show'],
+            template: `
+            <div class="message-box" v-if="show">
+                <strong><slot name="title"></slot></strong>
+                <slot></slot>
+                <span class="message-box-close" 
+                @click="$emit('update:show',false)">X</span>
             </div>
             `,
-            methods:{
-                addCourse(){
-                    this.$emit('add-course',this.course);
-                    this.course='';
+        });
+        //课程新增组件
+        Vue.component('course-add', {
+            // data(){
+            //     return{
+            //         course: ''
+            //     }
+            // },
+            props: ['value'],
+            template: `
+            <div>
+                <input type="text" :value="value" @input="onInput" 
+                @keydown.enter="addCourse" />
+                <button @click="addCourse">新增课程</button>
+            </div>
+            `,
+            methods: {
+                addCourse() {
+                    this.$emit('add-course');
+                },
+                onInput(e) {
+                    this.$emit('input', e.target.value);
                 }
             }
 
@@ -77,14 +112,17 @@
         const app = new Vue({
             el: '#app',
             data: {
-                title: '购物车',
-                courses: ['web全栈','web高级'],
-                
-
+                title: '插槽实现内容分发',
+                courses: ['web全栈', 'web高级'],
+                course: '',
+                show: false
             },
             methods: {
-                addCourse(course) {
-                    this.courses.push(course);
+                addCourse() {
+                    this.courses.push(this.course);
+                    this.course = '';
+                    // 提升新增成功
+                    this.show = true;
                 }
             },
             computed: {
@@ -92,31 +130,6 @@
                     return this.courses.length;
                 }
             },
-            // async created() {
-            //     this.courses = await getCourses();
-            // },
-            beforeCreate() {
-                console.log('beforeCreate');
-            },
-            created() {
-                console.log('created');
-            },
-            beforeMount() {
-                console.log('beforeMount');
-            },
-            mounted() {
-                setTimeout(() => {
-                    this.title = 'fooooo';
-                }, 2000);
-                console.log('mounted' + this.$el);
-            },
-            beforeUpdate() {
-                console.log('beforeUpdate');
-            },
-            updated() {
-                console.log('updated');
-            }
-
         });
 
         function getCourses() {

@@ -19,7 +19,8 @@
     <div id="app">
         <h3 :title="title">{{title}}</h3>
 
-        <course-add @add-course="addCourse"></course-add>
+        <course-add v-model="course" @add-course="addCourse"></course-add>
+        <!-- <course-add :value="course" @input="course=$event" @add-course="addCourse"></course-add> -->
         
         <p>课程总数：{{total}}门</p>
         <course-list :courses="courses"></course-list>
@@ -28,21 +29,25 @@
 
     <script>
         Vue.component('course-add',{
-            data(){
-                return{
-                    course: ''
-                }
-            },
+            // data(){
+            //     return{
+            //         course: ''
+            //     }
+            // },
+            props:['value'],
             template:`
             <div>
-                <input type="text" v-model="course" v-on:keydown.enter="addCourse" />
-                <button v-on:click="addCourse">新增课程</button>
+                <input type="text" :value="value" @input="onInput" 
+                @keydown.enter="addCourse" />
+                <button @click="addCourse">新增课程</button>
             </div>
             `,
             methods:{
                 addCourse(){
-                    this.$emit('add-course',this.course);
-                    this.course='';
+                    this.$emit('add-course');
+                },
+                onInput(e){
+                    this.$emit('input',e.target.value);
                 }
             }
 
@@ -77,14 +82,14 @@
         const app = new Vue({
             el: '#app',
             data: {
-                title: '购物车',
+                title: '在组件上使用v-model,实现双向绑定 ',
                 courses: ['web全栈','web高级'],
-                
-
+                course: ''
             },
             methods: {
-                addCourse(course) {
-                    this.courses.push(course);
+                addCourse() {
+                    this.courses.push(this.course);
+                    this.course='';
                 }
             },
             computed: {
@@ -92,31 +97,6 @@
                     return this.courses.length;
                 }
             },
-            // async created() {
-            //     this.courses = await getCourses();
-            // },
-            beforeCreate() {
-                console.log('beforeCreate');
-            },
-            created() {
-                console.log('created');
-            },
-            beforeMount() {
-                console.log('beforeMount');
-            },
-            mounted() {
-                setTimeout(() => {
-                    this.title = 'fooooo';
-                }, 2000);
-                console.log('mounted' + this.$el);
-            },
-            beforeUpdate() {
-                console.log('beforeUpdate');
-            },
-            updated() {
-                console.log('updated');
-            }
-
         });
 
         function getCourses() {
