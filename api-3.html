@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>07-2 API:事件相关</title>
+    <title>07-3 API:节点引用</title>
     <style>
         .active {
             background-color: #ddd;
@@ -38,45 +38,44 @@
 <body>
     <div id="app">
         <h3 :title="title">{{title}}</h3>
+        <span>
+            组件或元素引用</br>
+            ref和vm.$refs</br>
+            ref被用来给元素或子组件注册引用信息。引用信息将会注册在父组件的$refs对象上。如果在普通的DOM元素上使用，引用指向的就是DOM;如果用在子组件上，引用就指向组件
+
+
+        </span>
+        <!-- 批量清除多个消息窗口 -->
+        <!-- 给之前新增成功的消息添加.success -->
+        <message :show.sync="show" class="success">
+            <template v-solt:title>恭喜</template>
+            <template>新增课程成功</template>
+        </message>
+        <!-- 新增警告提示窗 -->
+        <message :show.sync="showWarn" class="warning">
+            <template v-slot:title>
+                <strong>警告</strong>
+            </template>
+            <template v-slot:default>
+                请输入课程名称！
+            </template>
+        </message>
+        <div class="toolbar"><button @click="$bus.$emit('message-close')">清空提示框</button></div>
+        <!-- 添加批量价格更新 -->
         <p>
-            vm.$on 监听当前实例上的自定义事件。事件可以由vm.$emit触发。回调函数会接收所有传入事件触发函数的额外参数。 </span>
-            <p>vm.$emit 触发当前实例上的事件。附加参数都会传给监听器回调。</p>
-            <p>事件总线：通过在Vue原型上添加一个Vue实例作为事件总线，实现组件间的相互通信，而且不受组件间关系的影响</p>
+            <input type="ptext" v-model.number="price">
+            <button @click="bathUpdate">批量更新价格</button>
+        </p>
+        <course-add v-model="course" @add-course="addCourse"></course-add>
+        <!-- <course-add :value="course" @input="course=$event" @add-course="addCourse"></course-add> -->
 
-            </span>
-            <!-- 批量清除多个消息窗口 -->
-            <!-- 给之前新增成功的消息添加.success -->
-            <message :show.sync="show" class="success">
-                <template v-solt:title>恭喜</template>
-                <template>新增课程成功</template>
-            </message>
-            <!-- 新增警告提示窗 -->
-            <message :show.sync="showWarn" class="warning">
-                <template v-slot:title>
-                    <strong>警告</strong>
-                </template>
-                <template v-slot:default>
-                    请输入课程名称！
-                </template>
-            </message>
-            <div class="toolbar"><button @click="$bus.$emit('message-close')">清空提示框</button></div>
-            <!-- 添加批量价格更新 -->
-            <p>
-                <input type="ptext" v-model.number="price">
-                <button @click="bathUpdate">批量更新价格</button>
-            </p>
-            <course-add v-model="course" @add-course="addCourse"></course-add>
-            <!-- <course-add :value="course" @input="course=$event" @add-course="addCourse"></course-add> -->
-
-            <p>课程总数：{{total}}门</p>
-            <course-list :courses="courses"></course-list>
+        <p>课程总数：{{total}}门</p>
+        <course-list :courses="courses"></course-list>
 
     </div>
 
     <script src="node_modules/vue/dist/vue.js"></script>
     <script>
-
-
         function Vuexxx() {
             this.events = {};
         }
@@ -100,11 +99,11 @@
         }
 
         var 报社 = new Vuexxx();
-        报社.$on('报纸',function(报纸){
-            console.log('看'+报纸);
+        报社.$on('报纸', function (报纸) {
+            console.log('看' + 报纸);
         });
 
-        报社.$emit('报纸','报纸20200101期');
+        报社.$emit('报纸', '报纸20200101期');
 
 
 
@@ -144,7 +143,7 @@
             props: ['value'],
             template: `
             <div>
-                <input type="text" :value="value" @input="onInput" 
+                <input type="text" :value="value" @input="onInput" ref="inp"
                 @keydown.enter="addCourse" />
                 <button @click="addCourse">新增课程</button>
             </div>
@@ -156,6 +155,9 @@
                 onInput(e) {
                     this.$emit('input', e.target.value);
                 }
+            },
+            mounted() {
+                this.$refs.inp.focus();
             }
 
         });
@@ -192,7 +194,7 @@
             el: '#app',
             data() {
                 return {
-                    title: '批量清除多个消息窗口',
+                    title: '设置输入框焦点',
                     courses: [],
                     course: '',
                     show: false,
@@ -204,7 +206,9 @@
                 addCourse() {
                     // 增加输入校验
                     if (this.course) {
-                        this.courses.push({ name: this.course });// push一个对象
+                        this.courses.push({
+                            name: this.course
+                        }); // push一个对象
                         this.course = '';
                         // 提示新增成功
                         this.show = true;
@@ -235,15 +239,20 @@
 
                 // 批量的更新下价格
                 this.bathUpdate();
-            }
+            }, 
         });
 
         function getCourses() {
             return new Promise(resolve => {
                 setTimeout(() => {
                     // 初始化courses时，没有price属性
-                    resolve([{ name: 'web全栈' },
-                    { name: 'web高级' }]);
+                    resolve([{
+                            name: 'web全栈'
+                        },
+                        {
+                            name: 'web高级'
+                        }
+                    ]);
                 }, 2000);
             });
         }
