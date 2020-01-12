@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>09-2自定义指令和钩子函数2</title>
+    <style>
+        .active {
+            background-color: #ddd;
+            cursor: pointer;
+        }
+
+        .message-box {
+            padding: 10px 20px;
+
+        }
+
+        .success {
+            background: #4fc08d;
+            border: 1px solid #42b983;
+        }
+
+        .warning {
+            background: #f66;
+            border: 1px solid #d63200;
+        }
+
+        .message-box-close {
+            float: right;
+            cursor: pointer;
+        }
+    </style>
+
+</head>
+
+<body>
+    <div id="app">
+        <h3 :title="title">{{title}}</h3>
+
+        <!-- 批量清除多个消息窗口 -->
+        <!-- 给之前新增成功的消息添加.success -->
+        <message :show.sync="show" class="success">
+            <template v-solt:title>恭喜</template>
+            <template>新增课程成功</template>
+        </message>
+        <!-- 新增警告提示窗 -->
+        <message :show.sync="showWarn" class="warning">
+            <template v-slot:title>
+                <strong>警告</strong>
+            </template>
+            <template v-slot:default>
+                请输入课程名称！
+            </template>
+        </message>
+        <div class="toolbar" v-permission="'admin'"><button @click="$bus.$emit('message-close')">清空提示框</button></div>
+        <!-- 添加批量价格更新 -->
+        <p>
+            <input type="ptext" v-model.number="price">
+            <button @click="bathUpdate">批量更新价格</button>
+        </p>
+        <course-add v-model="course" @add-course="addCourse"></course-add>
+        <!-- <course-add :value="course" @input="course=$event" @add-course="addCourse"></course-add> -->
+
+        <p>课程总数：{{total}}门</p>
+        <course-list :courses="courses"></course-list>
+
+    </div>
+
+    <script src="node_modules/vue/dist/vue.js"></script>
+    <script>
+        var role="user";
+        function Vuexxx() {
+            this.events = {};
+        }
+
+        Vuexxx.prototype = {
+            $emit: function (name, ...args) {
+                if (this.events[name]) {
+                    this.events[name].forEach(cb => cb(args));
+                }
+                console.log(this.events);
+            },
+            $on: function (name, callback) {
+                if (this.events[name]) {
+                    this.events[name].push(callback);
+                } else {
+                    this.events[name] = [callback];
+                }
+                console.log(this.events);
+            }
+
+        }
+
+        var 报社 = new Vuexxx();
+        报社.$on('报纸', function (报纸) {
+            console.log('看' + 报纸);
+        });
+
+        报社.$emit('报纸', '报纸20200101期');
+
+
+
+
+
+        // 事件总线
+        Vue.prototype.$bus = new Vuexxx();
+        // Vue.prototype.$bus=new Vue();  是因为Vue实现了$on $emit等
+
+        // 弹窗组件
+        Vue.component('message', {
+            props: ['show'],
+            template: `
+            <div class="message-box" v-if="show">
+                <strong><slot name="title"></slot></strong>
+                <slot></slot>
+                <span class="message-box-close" 
+                @click="$emit('update:show',false)">X</span>
+            </div>
+            `,
+            // 组件创建完成 
+            mounted() {
+                // 使用事件总线监听message-close事件
+                this.$bus.$on('message-close', () => {
+                    // 如果收到message-close，就触发当前实例上的事件，第一个参数表示事件名，第二个参数表示指定事件的参数值
+                    this.$emit('update:show', false);
+                });
+            }
+        });
+        // 课程新增组件
+        Vue.component('course-add', {
+            // data(){
+            //     return{
+            //         course: ''
+            //     }
+            // },
+            props: ['value'],
+            template: `
+            <div>
+                <input type="text" :value="value" @input="onInput" ref="inp"
+                @keydown.enter="addCourse" />
+                <button @click="addCourse">新增课程</button>
+            </div>
+            `,
+            methods: {
+                addCourse() {
+                    this.$emit('add-course');
+                },
+                onInput(e) {
+                    this.$emit('input', e.target.value);
+                }
+            },
+            mounted() {
+                this.$refs.inp.focus();
+            }
+
+        });
+        // 课程列表组件
+        Vue.component('course-list', {
+            data() {
+                return {
+                    selectedCourse: ''
+                }
+            },
+            props: {
+                courses: {
+                    type: Array,
+                    default: []
+                }
+            },
+            template: `
+                    <div>
+                        <!-- 条件渲染 -->               
+                        <p v-if="courses.length == 0">没有任何课程信息</p>       
+                        <!-- 列表渲染 -->      
+                        <ul>               
+                            <!-- class绑定 -->          
+                            <li v-for="c in courses" :key=c.name :class="{active: (selectedCourse === c)}"   
+                            @click="selectedCourse = c">{{c.name}} - ￥{{c.price}}</li>       
+                            <!-- style绑定 -->            
+                            <!-- <li v-for="c in courses" :style="{backgroundColor: (selectedCourse === c)?'#ddd':'transparent'}"                    @click="selectedCourse = c">{{c}}</li> -->  
+                        </ul> 
+                    </div>
+            `
+
+        });
+        // 自定义一个叫permission的指令，来控制工具栏的显示和移除
+        Vue.directive('permission', {
+            inserted(el,binding) {
+                console.log(binding);
+                if (role !== binding.value) {
+                    el.parentElement.removeChild(el);
+                }
+            }
+        });
+        const app = new Vue({
+            el: '#app',
+            data() {
+                return {
+                    title: '按钮权限控制示例',
+                    courses: [],
+                    course: '',
+                    show: false,
+                    showWarn: false,
+                    price: 0,
+                }
+            },
+            methods: {
+                addCourse() {
+                    // 增加输入校验
+                    if (this.course) {
+                        this.courses.push({
+                            name: this.course
+                        }); // push一个对象
+                        this.course = '';
+                        // 提示新增成功
+                        this.show = true;
+                    } else {
+                        // 提示警告
+                        this.showWarn = true;
+                    }
+                },
+                bathUpdate() {
+                    this.courses.forEach(p => {
+                        // p.price = this.price;//初始化courses时，没有price属性，这里直接给price属性赋值，js可以直接给没有的属性赋值。
+                        // 导致界面不会主动重新渲染 价格没有更新
+                        // 采用Vue.set()
+                        // this.$set(c, 'price', this.price); 
+                        Vue.set(p, 'price', this.price);
+                    });
+                    console.log(this.price);
+                    console.log(this.courses);
+                }
+            },
+            computed: {
+                total() {
+                    return this.courses.length;
+                }
+            },
+            async created() {
+                this.courses = await getCourses();
+
+                // 批量的更新下价格
+                this.bathUpdate();
+            },
+        });
+
+        function getCourses() {
+            return new Promise(resolve => {
+                setTimeout(() => {
+                    // 初始化courses时，没有price属性
+                    resolve([{
+                        name: 'web全栈'
+                    },
+                    {
+                        name: 'web高级'
+                    }
+                    ]);
+                }, 2000);
+            });
+        }
+    </script>
+</body>
+
+</html>

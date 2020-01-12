@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>09-2 自定义指令&钩子函数</title>
+    <style>
+        .active {
+            background-color: #ddd;
+            cursor: pointer;
+        }
+
+        .message-box {
+            padding: 10px 20px;
+            background: #4fc08d;
+            border: 1px solid #42b983;
+        }
+
+        .message-box-close {
+            float: right;
+            cursor: pointer;
+        }
+    </style>
+
+</head>
+
+<body>
+    <div id="app">
+        <h3 :title="title">{{title}}</h3>
+
+        <!-- 添加批量价格更新 -->
+        <p>
+            <input type="text" v-model.number="price">
+            <button @click="bathUpdate">批量更新价格</button>
+        </p>
+        <course-add v-model="course" @add-course="addCourse"></course-add>
+        <!-- <course-add :value="course" @input="course=$event" @add-course="addCourse"></course-add> -->
+
+        <p>课程总数：{{total}}门</p>
+        <course-list :courses="courses"></course-list>
+
+    </div>
+
+    <script src="node_modules/vue/dist/vue.js"></script>
+    <script>
+        // 弹窗组件
+        Vue.component('message-box', {
+            props: ['show'],
+            template: `
+            <div class="message-box" v-if="show">
+                <strong><slot name="title"></slot></strong>
+                <slot></slot>
+                <span class="message-box-close" 
+                @click="$emit('update:show',false)">X</span>
+            </div>
+            `,
+        });
+        // 课程新增组件
+        Vue.component('course-add', {
+            // data(){
+            //     return{
+            //         course: ''
+            //     }
+            // },
+            props: ['value'],
+            template: `
+            <div>
+                <input type="text" :value="value" @input="onInput" 
+                @keydown.enter="addCourse" v-focus/>
+                <button @click="addCourse">新增课程</button>
+            </div>
+            `,
+            methods: {
+                addCourse() {
+                    this.$emit('add-course');
+                },
+                onInput(e) {
+                    this.$emit('input', e.target.value);
+                }
+            },
+            // 组件中注册局部自定义指令
+            directives: {
+                focus: {
+                    inserted: function (el) {
+                        el.focus();
+                    }
+                }
+            }
+
+        });
+        // // 自定义指令（全局）
+        // Vue.directive('focus', {
+        //     inserted(el) {
+        //         el.focus();
+        //     }
+        // });
+        // 过滤器（全局）
+        // Vue.filter('定义过滤器函数名', function (value) {
+        //     return value;value;
+        // });
+        // 课程列表组件
+        Vue.component('course-list', {
+            data() {
+                return {
+                    selectedCourse: ''
+                }
+            },
+            props: {
+                courses: {
+                    type: Array,
+                    default: []
+                }
+            },
+            template: `
+                    <div>
+                        <!-- 条件渲染 -->               
+                        <p v-if="courses.length == 0">没有任何课程信息</p>       
+                        <!-- 列表渲染 -->      
+                        <ul>               
+                            <!-- class绑定 -->          
+                            <li v-for="c in courses" :key=c.name :class="{active: (selectedCourse === c)}"   
+                            @click="selectedCourse = c">{{c.name}} - {{c.price | currency('$')}}</li>       
+                            <!-- style绑定 -->            
+                            <!-- <li v-for="c in courses" :style="{backgroundColor: (selectedCourse === c)?'#ddd':'transparent'}"                    @click="selectedCourse = c">{{c}}</li> -->  
+                        </ul> 
+                    </div>
+            `,
+            filters: {// 局部过滤器
+                currency(value, symbol = '￥') {
+                    return symbol + value;
+                }
+            }
+
+        });
+        const app = new Vue({
+            el: '#app',
+            data: {
+                title: '09-2 自定义指令&钩子函数',
+                courses: [],
+                course: '',
+                show: false,
+                price: 0
+            },
+            methods: {
+                addCourse() {
+                    this.courses.push(this.course);
+                    this.course = '';
+                    // 提示新增成功
+                    this.show = true;
+                },
+                bathUpdate() {
+                    this.courses.forEach(p => {
+                        // p.price = this.price;//初始化courses时，没有price属性，这里直接给price属性赋值，js可以直接给没有的属性赋值。
+                        // 导致界面不会主动重新渲染 价格没有更新
+                        // 采用Vue.set()
+                        // this.$set(c, 'price', this.price); 
+                        Vue.set(p, 'price', this.price);
+                    });
+                    console.log(this.price);
+                    console.log(this.courses);
+                }
+            },
+            computed: {
+                total() {
+                    return this.courses.length;
+                }
+            },
+            async created() {
+                this.courses = await getCourses();
+
+                // 批量的更新下价格
+                this.bathUpdate();
+            },
+
+        });
+
+        function getCourses() {
+            return new Promise(resolve => {
+                setTimeout(() => {
+                    // 初始化courses时，没有price属性
+                    resolve([{ name: 'web全栈' },
+                    { name: 'web高级' }]);
+                }, 2000);
+            });
+        }
+    </script>
+</body>
+
+</html>
