@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>09-3渲染函数</title>
+    <title>09-4函数式组件</title>
     <style>
         .active {
             background-color: #ddd;
@@ -121,13 +121,14 @@
         Vue.prototype.$bus = new Vuexxx();
         // Vue.prototype.$bus=new Vue();  是因为Vue实现了$on $emit等
 
-        // heading组件
+        // heading组件-改成函数式组件
         // <heading :level="1" :title="title" >
         // <svg class="icon"><use xlink:href="#icon-GolfCart"></use></svg>
         // {{title}}
         // </heading>
         // <h2 title=""></h2>
         Vue.component('heading', {
+            functional:true,
             props: {
                 level: {
                     type: String,
@@ -141,33 +142,38 @@
                     type: String
                 }
             },
-            render(h) {
-                let childrend = []; //原本孩子是this.$slots.default数组,现在在其前面加上svg
-                if (this.iconname) {
-                    childrend.push(h('svg', {
+            render(h, context) { //上下文传参
+                let children = [];
+                const {
+                    iconname,
+                    title,
+                    level
+                } = context.props;
+                if (iconname) {
+                    children.push(h('svg', {
                             attrs: {
                                 class: 'icon'
                             }
                         },
                         [h('use', {
                             attrs: {
-                                'xlink:href': '#icon-' + this.iconname
+                                'xlink:href': '#icon-' + iconname
                             },
-                        })]//这里要用[]包起来，是数组
+                        })] //这里要用[]包起来，是数组
                     ));
-                    childrend = childrend.concat(this.$slots.default);
+                    children = children.concat(context.children);
                 }
-                
+
                 //添加图标功能
                 //<svg class="icon"><use xlink:href="#icon-GolfCart"></use></svg>
                 const vnode = h(
-                    'h' + this.level, //参数1：tagname
+                    'h' + level, //参数1：tagname
                     {
                         attrs: {
-                            title: this.title
+                            title
                         }
                     }, // 参数2：
-                    childrend // 参数3：子节点VNode数组
+                    children // 参数3：子节点VNode数组
                 )
                 // snabbdom
                 console.log(vnode);
@@ -266,7 +272,7 @@
             el: '#app',
             data() {
                 return {
-                    title: '09-3渲染函数',
+                    title: '09-4函数式组件',
                     courses: [],
                     course: '',
                     show: false,

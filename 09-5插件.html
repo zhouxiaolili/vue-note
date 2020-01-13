@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>09-3渲染函数</title>
+    <title>09-5插件</title>
     <style>
         .active {
             background-color: #ddd;
@@ -86,7 +86,11 @@
     </div>
 
     <script src="node_modules/vue/dist/vue.js"></script>
+    <script src="plugin/heading.js"></script>
     <script>
+        //如果插件里没写，这里就要写
+        Vue.use(MyPlugin);
+        
         var role = "user";
 
         function Vuexxx() {
@@ -121,61 +125,7 @@
         Vue.prototype.$bus = new Vuexxx();
         // Vue.prototype.$bus=new Vue();  是因为Vue实现了$on $emit等
 
-        // heading组件
-        // <heading :level="1" :title="title" >
-        // <svg class="icon"><use xlink:href="#icon-GolfCart"></use></svg>
-        // {{title}}
-        // </heading>
-        // <h2 title=""></h2>
-        Vue.component('heading', {
-            props: {
-                level: {
-                    type: String,
-                    required: true
-                },
-                title: {
-                    type: String,
-                    default: ''
-                },
-                iconname: {
-                    type: String
-                }
-            },
-            render(h) {
-                let childrend = []; //原本孩子是this.$slots.default数组,现在在其前面加上svg
-                if (this.iconname) {
-                    childrend.push(h('svg', {
-                            attrs: {
-                                class: 'icon'
-                            }
-                        },
-                        [h('use', {
-                            attrs: {
-                                'xlink:href': '#icon-' + this.iconname
-                            },
-                        })]//这里要用[]包起来，是数组
-                    ));
-                    childrend = childrend.concat(this.$slots.default);
-                }
-                
-                //添加图标功能
-                //<svg class="icon"><use xlink:href="#icon-GolfCart"></use></svg>
-                const vnode = h(
-                    'h' + this.level, //参数1：tagname
-                    {
-                        attrs: {
-                            title: this.title
-                        }
-                    }, // 参数2：
-                    childrend // 参数3：子节点VNode数组
-                )
-                // snabbdom
-                console.log(vnode);
-                // 返回createElement返回的VNode
-                return vnode;
-            }
-        });
-
+        
         // 弹窗组件
         Vue.component('message', {
             props: ['show'],
@@ -266,7 +216,7 @@
             el: '#app',
             data() {
                 return {
-                    title: '09-3渲染函数',
+                    title: '09-5插件',
                     courses: [],
                     course: '',
                     show: false,
